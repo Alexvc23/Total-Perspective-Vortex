@@ -1,0 +1,20 @@
+# ==============================================================================
+# Requirements for Total Perspective Vortex (BCI & Machine Learning)
+# ==============================================================================
+
+# Core EEG Processing & Data Acquisition
+mne>=1.4.0                  # Mandatory library used to download, parse, and process EEG data from PhysioNet.
+
+# Machine Learning & Pipeline Architecture
+scikit-learn>=1.2.0         # Mandatory for pipeline architecture (BaseEstimator, TransformerMixin) and validation[cite: 1, 2].
+
+# Numerical Computing & Custom Algorithm Implementation
+numpy>=1.22.0               # Required for implementing the custom dimensionality reduction matrix, eigenvalues, and covariance.
+scipy>=1.8.0                # Used for advanced mathematical operations, signal filtering, and covariance estimation[cite: 1].
+
+# Data Visualization & Exploration (Phase 1 Tasks)
+matplotlib>=3.5.0           # Required for visualizing raw cerebral signals, cleaned frequency bands, and features[cite: 1].
+
+# Real-Time Stream Simulation & Networking
+# Note: 'mne-realtime' is STRICTLY FORBIDDEN by project constraints[cite: 1, 2].
+# Standard library tools (like 'time' and 'queue') will be used instead for the playback mechanism[cite: 1].
