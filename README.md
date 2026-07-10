@@ -66,6 +66,23 @@ A well-known anomaly exists for **Subject 88**: their data was recorded at **128
 
 ### Data Integrity
 Due to inconsistent annotations or anomalies, many professional studies also exclude subjects **38, 89, 92, 100, 104, and 106** to maintain a clean cohort of 103 subjects.
+Yes, this is **true**. Focusing on the **central electrodes** and analyzing power changes in the **Mu and Beta frequency bands** is a fundamental principle for building a motor imagery brain-computer interface.
+
+
+### **Why focus on the central electrodes?**
+The central electrodes—most notably **C3, Cz, and C4**—are positioned directly over the **sensorimotor area** of the scalp, which overlays the **primary motor cortex (M1)**. This specific region is responsible for generating the neural activity associated with both **motor execution** (physical movement) and **motor imagery** (the mental rehearsal of movement). Because the electrical signals originating from the motor cortex are localized, focusing on these specific "blue/teal dots" allows you to isolate the relevant signal while filtering out background noise from other brain regions.
+
+### **Why focus on the Mu and Beta bands?**
+The **mu rhythm ($8-12$ Hz)** and **beta rhythm ($13-30$ Hz)** are the **primary physiological markers** used to decode motor states. 
+*   **The "Idling" State:** When the motor cortex is at rest, neural populations oscillate in a highly synchronized fashion, which results in **higher signal power** in these specific frequency bands.
+*   **The Power Change (ERD):** When a person performs or even just *imagines* a movement, this neural synchrony is disrupted. This phenomenon is called **Event-Related Desynchronization (ERD)** and is characterized by a **distinct drop in power** in the Mu and Beta bands.
+
+### **Localized Task Discrimination**
+These power changes are not just general; they are **spatially localized** based on the task being performed:
+*   **Right-hand task:** Results in a power decrease (ERD) over the **left motor cortex** (near electrode **C3**).
+*   **Left-hand task:** Results in a power decrease (ERD) over the **right motor cortex** (near electrode **C4**).
+
+Machine learning models, such as the **Common Spatial Patterns (CSP)** algorithm required for your project, are designed to mathematically find the "projection matrix" that best captures these localized power differences, making it possible to distinguish between different imagined movements.
 
 ### Repository Management
 **Do not include the dataset in your Git repository.** The dataset is large (uncompressed ~3.4 GB). Your submission should only contain the Python scripts to download, parse, and analyze it.
