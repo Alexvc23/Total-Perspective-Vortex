@@ -220,7 +220,9 @@ __marimo__/
 
 #prevent pushing the massive EEG dataset to your repository
 data/
+doc/data/
 *.edf
 .DS_Store
 untitled:plan-physioNetExploration.prompt.md
 *.png
+doc/mne_data/
