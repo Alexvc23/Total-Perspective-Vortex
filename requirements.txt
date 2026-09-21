@@ -2,19 +2,117 @@
 # Requirements for Total Perspective Vortex (BCI & Machine Learning)
 # ==============================================================================
 
+# ------------------------------------------------------------------------------
 # Core EEG Processing & Data Acquisition
-mne>=1.4.0                  # Mandatory library used to download, parse, and process EEG data from PhysioNet.
+# ------------------------------------------------------------------------------
+mne==1.12.1                 # Mandatory core library for downloading, parsing, and epoching PhysioNet EEG data.
+pooch==1.9.0                # Used by MNE under the hood for downloading dataset files securely.
 
+# ------------------------------------------------------------------------------
 # Machine Learning & Pipeline Architecture
-scikit-learn>=1.2.0         # Mandatory for pipeline architecture (BaseEstimator, TransformerMixin) and validation[cite: 1, 2].
+# ------------------------------------------------------------------------------
+scikit-learn==1.9.0         # Mandatory for sklearn pipelines, custom estimators/transformers, and validation.
+joblib==1.5.3               # Model serialization and parallel processing utility used by scikit-learn.
+threadpoolctl==3.6.0        # Thread management for scientific and ML operations.
 
+# ------------------------------------------------------------------------------
 # Numerical Computing & Custom Algorithm Implementation
-numpy>=1.22.0               # Required for implementing the custom dimensionality reduction matrix, eigenvalues, and covariance.
-scipy>=1.8.0                # Used for advanced mathematical operations, signal filtering, and covariance estimation[cite: 1].
+# ------------------------------------------------------------------------------
+numpy==2.5.0                # Primary library for array operations, linear algebra, and manual algorithm coding.
+scipy==1.18.0               # Signal processing, filter design, eigenvalue solver, and covariance computations.
 
-# Data Visualization & Exploration (Phase 1 Tasks)
-matplotlib>=3.5.0           # Required for visualizing raw cerebral signals, cleaned frequency bands, and features[cite: 1].
+# ------------------------------------------------------------------------------
+# 2D Data Visualization & Data Exploration
+# ------------------------------------------------------------------------------
+matplotlib==3.11.0          # Core plotting engine for EEG timelines, frequency band power, and signals.
+matplotlib-inline==0.2.2    # Inline plotting integration for interactive Jupyter environments.
+contourpy==1.3.3            # Calculation of 2D contours (used for 2D scalp topomaps).
+cycler==0.12.1              # Color cycling for matplotlib figures.
+fonttools==4.63.0           # Font rendering support for plots.
+kiwisolver==1.5.0           # Fast layout constraint solver used by matplotlib.
+Pillow==12.3.0              # Image manipulation library for saving/processing figure assets.
 
-# Real-Time Stream Simulation & Networking
-# Note: 'mne-realtime' is STRICTLY FORBIDDEN by project constraints[cite: 1, 2].
-# Standard library tools (like 'time' and 'queue') will be used instead for the playback mechanism[cite: 1].
+# ------------------------------------------------------------------------------
+# 3D Scalp & Anatomical Visualization Engine
+# ------------------------------------------------------------------------------
+pyvista==0.49.0             # High-performance 3D mesh rendering engine used by MNE for scalp models.
+pyvistaqt==0.13.1           # Qt bindings for PyVista to render interactive 3D windows.
+pyvista-validation==0.2.2   # Data structure validation helper for PyVista meshes.
+QtPy==2.4.3                 # Python wrapper abstraction layer across Qt bindings.
+PyQt5==5.15.11              # Qt5 GUI framework used to draw 3D graphics windows on macOS/Linux.
+PyQt5-Qt5==5.15.19          # Qt5 C++ runtime binaries for PyQt5.
+PyQt5_sip==12.19.0          # SIP C++ binding generator runtime for PyQt5.
+vtk==9.7.0                  # Visualization Toolkit for rendering 3D geometries and surfaces.
+nibabel==5.4.2              # Neuroimaging file reader (required to parse FreeSurfer 3D surface meshes like fsaverage).
+darkdetect==0.8.0           # OS dark mode detection to style 3D render windows nicely.
+scooby==0.12.0              # Environment reporting helper used by PyVista.
+
+# ------------------------------------------------------------------------------
+# Interactive Jupyter Notebook Environment & Kernels
+# ------------------------------------------------------------------------------
+ipykernel==7.3.0            # Jupyter kernel wrapper for executing Python code inside notebooks.
+ipython==9.15.0             # Interactive Python shell engine.
+ipywidgets==8.1.8           # Interactive UI control widgets for Jupyter notebooks.
+jupyter_client==8.9.1       # Client protocol for Jupyter notebooks.
+jupyter_core==5.9.1         # Core base infrastructure for Jupyter.
+jupyterlab_widgets==3.0.16  # JupyterLab UI widget extension integration.
+widgetsnbextension==4.0.15  # Notebook extension for ipywidgets rendering.
+debugpy==1.8.21             # Debugger backend for Python/VS Code notebook debugging.
+traitlets==5.15.1           # Configuration and event binding system for IPython/Jupyter.
+pyzmq==27.1.0               # ZeroMQ Python bindings for Jupyter message passing.
+tornado==6.5.7              # Asynchronous web server underlying Jupyter networking.
+
+# ------------------------------------------------------------------------------
+# Text Parsing, Rich Terminal Formatting & Documentation
+# ------------------------------------------------------------------------------
+rich==15.0.0                # Rich text, clean status progress bars, and formatted terminal outputs.
+rich-rst==2.1.0             # ReStructuredText renderer extension for Rich.
+docstring_parser==0.18.0    # Python docstring parser for automated metadata extraction.
+markdown-it-py==4.2.0       # Markdown parser engine.
+mdurl==0.1.2                # URL utilities for markdown-it.
+Pygments==2.20.0            # Syntax highlighting engine for code cells and output formatting.
+
+# ------------------------------------------------------------------------------
+# Base Utilities, Environment Helpers & Dependencies
+# ------------------------------------------------------------------------------
+asttokens==3.0.1            # AST token utilities for code introspection.
+attrs==26.1.0               # Data class attribute helpers.
+certifi==2026.6.17          # Root SSL certificates for secure HTTPS data downloads.
+charset-normalizer==3.4.7   # Encoding detection library.
+colorama==0.4.6             # Cross-platform colored terminal text support.
+comm==0.2.3                 # Inter-process communication objects for Jupyter.
+cyclopts==4.25.3            # Command Line Interface (CLI) parser.
+decorator==5.3.1            # Python function decorator helpers.
+executing==2.2.1            # Inspection of live execution stack frames.
+idna==3.18                  # Internationalized Domain Names support in URLs.
+ipython_pygments_lexers==1.1.1 # Syntax lexers for IPython.
+jedi==0.20.0                # Autocompletion and static analysis engine for Python code.
+Jinja2==3.1.6               # Templating engine for HTML/UI outputs.
+lazy-loader==0.5            # On-demand module loading helper used by neuroimaging tools.
+MarkupSafe==3.0.3           # String escaping helper for HTML templates.
+narwhals==2.23.0            # Lightweight dataframe compatibility layer.
+nest-asyncio2==1.7.2        # Support for nested event loops in Jupyter environments.
+packaging==26.2             # Version requirement parsing utilities.
+parso==0.8.7                # Python parser for static code analysis.
+pexpect==4.9.0              # Automation tool for spawn child processes.
+platformdirs==4.10.0        # OS-agnostic directory locator helpers.
+prompt_toolkit==3.0.52      # Interactive terminal prompts engine.
+psutil==7.2.2               # System process and CPU memory monitoring.
+ptyprocess==0.7.0           # Pseudo-terminal control tools.
+pure_eval==0.2.3            # Abstract evaluation utility for error stacktraces.
+pyparsing==3.3.2            # Grammar parsing engine for string manipulation.
+python-dateutil==2.9.0.post0# Date and time calculations helper.
+requests==2.34.2            # HTTP library used for fetching dataset files over web APIs.
+six==1.17.0                 # Python 2 and 3 compatibility utilities.
+stack-data==0.6.3           # Detailed execution stack formatting for debugging.
+tqdm==4.68.3                # Console progress bars for long-running batch iterations.
+typing_extensions==4.16.0   # Type hint annotations backports.
+urllib3==2.7.0              # Low-level HTTP client library.
+wcwidth==0.8.2              # Character cell width calculations for terminal displays.
+
+# ==============================================================================
+# Hard Constraints & Red Lines
+# ==============================================================================
+# NOTE: 'mne-realtime' is STRICTLY FORBIDDEN by project instructions.
+# Stream playback simulations must be custom-coded using standard tools like 'time'.
+# The PhysioNet dataset must NOT be checked into Git repository tracking.
