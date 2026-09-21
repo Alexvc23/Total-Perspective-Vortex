@@ -1,4 +1,3 @@
-
 import os
 import mne
 import matplotlib.pyplot as plt
@@ -16,16 +15,16 @@ EXCLUDED_SUBJECTS = [38, 88, 89, 92, 100, 104, 106]
 SUBJECT_TO_TEST = 1
 RUN_TO_TEST = 3  # Motor Imagery: Left vs Right Fist
 
-# 106 ok, 
+# 106 ok,
 
 # Base directory for the unzipped dataset
-BASE_DATA_PATH = "./data/files"
+# BASE_DATA_PATH = "mne_data"
+# BASE_DATA_PATH = "mne_data/MNE-eegbci-data/files/eegmmidb/1.0.0"
 
 # ──────────────────────────────────────────────────────────────────────────────
 
-def load_eeg_data(
-    subject_id, run_id, base_path=BASE_DATA_PATH, montage_type="standard_1020"
-):
+
+def load_eeg_data(subject_id, run_id, base_path, montage_type="standard_1005"):
     """
     Loads an EDF+ file for a specific subject and run, verifying
         metadata constraints.
@@ -33,9 +32,9 @@ def load_eeg_data(
         subject_id (int): The subject number (e.g., 1 for S001)
         run_id (int): The run number (e.g., 4 for R04)
         base_path (str): The base directory where the dataset is stored.
-        montage_type (str): The type of montage to apply (default is "standard_1020").
+        montage_type (str): The type of montage to apply (default is "standard_1005").
     returns:
-        raw (mne.io.Raw): The loaded EEG data with verified metadata
+        raw (mne.io.Raw): The loaded EEG() (electroencephalography data) with verified metadata
             in form of an MNE Raw object.
     """
 
@@ -84,6 +83,7 @@ def load_eeg_data(
     return raw
 
     # ──────────────────────────────────────────────────────────────────────
+
 
 def extract_and_map_events(raw, run_id):
     """
