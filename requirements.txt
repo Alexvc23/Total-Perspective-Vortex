@@ -101,7 +101,7 @@ psutil==7.2.2               # System process and CPU memory monitoring.
 ptyprocess==0.7.0           # Pseudo-terminal control tools.
 pure_eval==0.2.3            # Abstract evaluation utility for error stacktraces.
 pyparsing==3.3.2            # Grammar parsing engine for string manipulation.
-python-dateutil==2.9.0.post0# Date and time calculations helper.
+python-dateutil==2.9.0.post0 # Date and time calculations helper.
 requests==2.34.2            # HTTP library used for fetching dataset files over web APIs.
 six==1.17.0                 # Python 2 and 3 compatibility utilities.
 stack-data==0.6.3           # Detailed execution stack formatting for debugging.
@@ -109,6 +109,7 @@ tqdm==4.68.3                # Console progress bars for long-running batch itera
 typing_extensions==4.16.0   # Type hint annotations backports.
 urllib3==2.7.0              # Low-level HTTP client library.
 wcwidth==0.8.2              # Character cell width calculations for terminal displays.
+pandas
 
 # ==============================================================================
 # Hard Constraints & Red Lines
