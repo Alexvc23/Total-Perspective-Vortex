@@ -1,88 +1,33 @@
-# Total-Perspective-Vortex
 
-## Total Perspective Vortex: Dataset Overview
+## Dataset Architecture: The PhysioNet EEG Structure
 
-This project builds a **Brain-Computer Interface (BCI)** by analyzing brain activity recorded via **Electroencephalography (EEG)**. If you are new to this field, think of it as "plugging your brain into a shell" to infer what a person is thinking or doing based on the electrical signals from their scalp.
+This project processes the **PhysioNet EEG Motor Movement/Imagery Dataset**, a benchmark collection of brain-computer interface (BCI) data recorded using the BCI2000 system.
 
-The primary data source is the **PhysioNet EEG Motor Movement/Imagery Dataset**, a global benchmark containing over 1,500 recordings from **109 volunteers**.
+The data is structured hierarchically across four dimensions:
 
----
+### 1. Cohort & Sessions (Subjects and Runs)
 
-## 1. Data Nature: What are we looking at?
-The dataset captures brainwaves while subjects either **performed** (Motor Execution) or **imagined** (Motor Imagery) specific movements. 
-
-*   **Motor Execution:** The subject actually moved their hands or feet.
-*   **Motor Imagery:** The subject only *thought* about moving their hands or feet without physical action.
-*   **Significance:** Because imagined movement activates similar brain dynamics to real movement, machine learning can be trained to "read" these intentions from the signals.
-
----
-
-## 2. Data Architecture: How is it organized?
-
-The data is structured hierarchically by **Subjects**, **Runs**, and **Events**.
-
-### A. Subjects and Files
-There are **109 subjects**. Each subject has a set of files named following the convention `S[subject_id]R[run_id].edf` (e.g., `S001R04.edf` is Subject 1, Run 4).
-
-### B. The 14 Experimental Runs
-Each subject completed 14 separate "runs" or recording sessions, each lasting 1–2 minutes. You must map the **Run Number** to the correct task:
-
-| Run # | Category | Task Description |
-| :--- | :--- | :--- |
-| **1 & 2** | Baseline | Resting with eyes open/closed. |
-| **3, 7, 11** | Execution | Opening/closing Left vs. Right fist. |
-| **4, 8, 12** | **Imagery** | **Imagining** opening/closing Left vs. Right fist. |
-| **5, 9, 13** | Execution | Opening/closing Both Fists vs. Both Feet. |
-| **6, 10, 14** | **Imagery** | **Imagining** opening/closing Both Fists vs. Both Feet. |
-
-### C. Event Codes (Labels)
-Based on the dataset architecture and experimental protocol detailed in the sources, here is the summary table for the **Annotations (Events)** used in the PhysioNet EEG Motor Movement/Imagery Dataset.
-
-### **PhysioNet EEG Event Codes Mapping**
-
-The interpretation of the event codes (**T0, T1, T2**) is strictly dependent on the **Run Number** of the experiment.
-
-| Event Code | General Category | Semantic Value (Unilateral Runs) | Semantic Value (Bilateral Runs) |
-| :--- | :--- | :--- | :--- |
-| **-** | **Target Run Numbers** | **3, 4, 7, 8, 11, 12** | **5, 6, 9, 10, 13, 14** |
-| **T0** | **Rest** | Rest / Relaxation | Rest / Relaxation |
-| **T1** | **Task 1** | Onset of **Left Fist** motion or imagery | Onset of **Both Fists** motion or imagery |
-| **T2** | **Task 2** | Onset of **Right Fist** motion or imagery | Onset of **Both Feet** motion or imagery |
-
----
-
-## 3. Technical Specifications
-*   **Format:** Files are in **EDF+** (European Data Format).
-*   **Sampling Rate:** The standard speed is **160 Hz** (160 snapshots of brain activity per second).
-*   **Channels:** Signals come from **64 electrodes** (channels) placed on the scalp according to the **International 10-10 system**. 
-*   **Montage Discrepancy:** Note that digital records index channels from **0 to 63**, while diagrams often number them **1 to 64**.
-
----
-
-## 4. Critical Warnings for Developers
-
-### ⚠️ The "Subject 88" Bug
-A well-known anomaly exists for **Subject 88**: their data was recorded at **128 Hz** instead of the standard 160 Hz. If you load this subject with others, your processing pipeline will crash or produce errors. **Always exclude Subject 88** during the initial loading phase.
-
-### Data Integrity
-Due to inconsistent annotations or anomalies, many professional studies also exclude subjects **38, 89, 92, 100, 104, and 106** to maintain a clean cohort of 103 subjects.
-Yes, this is **true**. Focusing on the **central electrodes** and analyzing power changes in the **Mu and Beta frequency bands** is a fundamental principle for building a motor imagery brain-computer interface.
+* **Subjects:** 109 volunteers.
+* **Runs:** Each subject performed 14 experimental runs (1-2 minutes each).
+* **Protocol Map:**
+* **Runs 1 & 2:** Baseline (Eyes open / Eyes closed).
+* **Runs 3, 7, 11:** Motor Execution (Left vs. Right fist).
+* **Runs 4, 8, 12:** Motor Imagery (Imagine Left vs. Right fist).
+* **Runs 5, 9, 13:** Motor Execution (Both fists vs. Both feet).
+* **Runs 6, 10, 14:** Motor Imagery (Imagine Both fists vs. Both feet).
 
 
-### **Why focus on the central electrodes?**
-The central electrodes—most notably **C3, Cz, and C4**—are positioned directly over the **sensorimotor area** of the scalp, which overlays the **primary motor cortex (M1)**. This specific region is responsible for generating the neural activity associated with both **motor execution** (physical movement) and **motor imagery** (the mental rehearsal of movement). Because the electrical signals originating from the motor cortex are localized, focusing on these specific "blue/teal dots" allows you to isolate the relevant signal while filtering out background noise from other brain regions.
 
-### **Why focus on the Mu and Beta bands?**
-The **mu rhythm ($8-12$ Hz)** and **beta rhythm ($13-30$ Hz)** are the **primary physiological markers** used to decode motor states. 
-*   **The "Idling" State:** When the motor cortex is at rest, neural populations oscillate in a highly synchronized fashion, which results in **higher signal power** in these specific frequency bands.
-*   **The Power Change (ERD):** When a person performs or even just *imagines* a movement, this neural synchrony is disrupted. This phenomenon is called **Event-Related Desynchronization (ERD)** and is characterized by a **distinct drop in power** in the Mu and Beta bands.
+### 2. Experimental Trials (Events)
 
-### **Localized Task Discrimination**
-These power changes are not just general; they are **spatially localized** based on the task being performed:
-*   **Right-hand task:** Results in a power decrease (ERD) over the **left motor cortex** (near electrode **C3**).
-*   **Left-hand task:** Results in a power decrease (ERD) over the **right motor cortex** (near electrode **C4**).
+Within each run, the data contains embedded annotations marking the exact onset of a stimulus or action.
 
-Machine learning models, such as the **Common Spatial Patterns (CSP)** algorithm required for your project, are designed to mathematically find the "projection matrix" that best captures these localized power differences, making it possible to distinguish between different imagined movements.
+* **T0:** Rest period.
+* **T1:** Left fist action (in unilateral runs) OR Both fists action (in bilateral runs).
+* **T2:** Right fist action (in unilateral runs) OR Both feet action (in bilateral runs).
 
-### Repository Management
-**Do not include the dataset in your Git repository.** The dataset is large (uncompressed ~3.4 GB). Your submission should only contain the Python scripts to download, parse, and analyze it.
+### 3. Spatial & Temporal Granularity (Channels and Sampling)
+
+* **Channels (Space):** Brain activity is captured across 64 electrodes positioned according to the International 10-10 system. *(Note: MNE and digital arrays index these from 0 to 63, while clinical diagrams label them 1 to 64)*.
+* **Sampling Rate (Time):** The data is sampled at **160 Hz**, meaning the system captures 160 discrete voltage measurements (snapshots) per second across all 64 channels simultaneously.
+* **Format:** Data is stored in EDF+ (European Data Format).
