@@ -2,6 +2,10 @@ import os
 import mne
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
+import gc
+from tqdm.auto import tqdm
+from typing import List, Tuple
 
 # Suppress some MNE warnings for cleaner notebook output
 mne.set_log_level('WARNING')
@@ -25,7 +29,7 @@ RUN_TO_TEST = 3  # Motor Imagery: Left vs Right Fist
 # ──────────────────────────────────────────────────────────────────────────────
 
 
-def load_eeg_data(subject_id, run_id, base_path, montage_type="standard_1005"):
+def load_eeg_data(subject_id, run_id, base_path, montage_type="standard_1020"):
     """
     Loads an EDF+ file for a specific subject and run, verifying
         metadata constraints.
@@ -33,7 +37,7 @@ def load_eeg_data(subject_id, run_id, base_path, montage_type="standard_1005"):
         subject_id (int): The subject number (e.g., 1 for S001)
         run_id (int): The run number (e.g., 4 for R04)
         base_path (str): The base directory where the dataset is stored.
-        montage_type (str): The type of montage to apply (default is "standard_1005").
+        montage_type (str): The type of montage to apply (default is "standard_1020").
     returns:
         raw (mne.io.Raw): The loaded EEG() (electroencephalography data) with verified metadata
             in form of an MNE Raw object.
@@ -131,3 +135,119 @@ def extract_and_map_events(raw, run_id):
         print(f"  Code {event_code}: {desc}")
 
     return events, event_dict, descriptions
+
+
+def load_and_parse_eeg(
+    subject_ids: List[int],
+    run_ids: List[int],
+    base_path: str,
+    tmin: float = 0.0,
+    tmax: float = 4.0,
+    include_rest: bool = False
+) -> Tuple[np.ndarray, np.ndarray, pd.DataFrame]:
+    """
+    Extracts, filters, remaps, and epochs PhysioNet EEG data into trial tensors.
+
+    Args:
+        subject_ids: List of subject integers to process.
+        run_ids: List of run integers to process.
+        base_path: Absolute path to the MNE data directory.
+        tmin: Start time of the epoch in seconds.
+        tmax: End time of the epoch in seconds.
+        include_rest: Whether to include T0 (Rest) as a separate class (label 4).
+
+    Returns:
+        X: NumPy array of shape (n_trials, 64, n_samples).
+        y: Target label vector of shape (n_trials,).
+        metadata: DataFrame containing trial provenance (subject, run, event, class_name).
+    """
+    # Lists to accumulate trials, labels, and metadata across all subjects/runs
+    X_list, y_list, metadata_records = [], [], []
+
+    # Iterate through each subject requested
+    for subject in tqdm(subject_ids, desc="Processing Subjects"):
+        # Iterate through each run requested for this subject
+        for run in run_ids:
+            try:
+                # 1. Load data with hardware validation (160Hz, 64 channels, standard_1020)
+                raw = load_eeg_data(subject, run, base_path=base_path)
+
+                # 2. Preprocessing: Common Average Reference (CAR)
+                # Re-references the signal to the global average to reduce noise
+                raw.set_eeg_reference("average", projection=False, verbose=False)
+
+                # 3. Preprocessing: Notch Filter (60 Hz)
+                # Removes power-line interference (hum) at 60 Hz
+                raw.notch_filter(60.0, fir_design="firwin", verbose=False)
+
+                # 4. Preprocessing: Band-pass Filter (8.0 - 30.0 Hz)
+                # Keeps Alpha/Beta motor rhythms and removes low-frequency drift/high-frequency noise
+                raw.filter(8.0, 30.0, fir_design="firwin", skip_by_annotation="edge", verbose=False)
+
+                # 5. Dynamic Event Remapping
+                # Define mappings based on the PhysioNet task protocol
+                if run in [4, 8, 12]:
+                    # Unilateral Imagery: Left (0) vs Right (1)
+                    mapping = {"T1": 0, "T2": 1}
+                elif run in [6, 10, 14]:
+                    # Bilateral Imagery: Both Fists (2) vs Both Feet (3)
+                    mapping = {"T1": 2, "T2": 3}
+                else:
+                    # Default generic mapping for other runs
+                    mapping = {"T1": 0, "T2": 1}
+
+                # Add rest period (Class 4) if requested
+                if include_rest:
+                    mapping["T0"] = 4
+
+                # Extract events from annotations based on our specific mapping
+                events, event_id = mne.events_from_annotations(raw, event_id=mapping, verbose=False)
+
+                # 6. Trial Epoching
+                # Segment the signal; baseline=None as drift is already filtered out
+                epochs = mne.Epochs(
+                    raw, events, event_id=event_id,
+                    tmin=tmin, tmax=tmax,
+                    baseline=None, preload=True, verbose=False
+                )
+
+                # 7. Convert to NumPy for scikit-learn integration
+                X_run = epochs.get_data(copy=True)
+                y_run = epochs.events[:, -1]
+
+                # Store data if any trials were found
+                if len(y_run) > 0:
+                    X_list.append(X_run)
+                    y_list.append(y_run)
+
+                    # 8. Record Metadata for every trial to track subject/run/class
+                    # Reverse map the label to get the human-readable class name
+                    inv_mapping = {v: k for k, v in mapping.items()}
+                    for i, label in enumerate(y_run):
+                        metadata_records.append({
+                            "subject_id": subject,
+                            "run_id": run,
+                            "trial_id": i,
+                            "label": label,
+                            "class_name": inv_mapping[label]
+                        })
+
+                # Force memory cleanup
+                del raw, epochs
+                gc.collect()
+
+            except Exception as e:
+                # Log error and skip to the next run
+                print(f"Error processing S{subject:03d}R{run:02d}: {e}")
+                continue
+
+    # Final Check: Did we find any data?
+    if not X_list:
+        raise ValueError("No valid EEG trials were found for the provided subject/run criteria.")
+
+    # Concatenate all trial arrays into a single unified 3D tensor
+    X = np.concatenate(X_list, axis=0)
+    y = np.concatenate(y_list, axis=0)
+    metadata = pd.DataFrame(metadata_records)
+
+    return X, y, metadata
