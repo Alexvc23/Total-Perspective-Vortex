@@ -1,75 +1,87 @@
-## Total Perspective Vortex: Copilot Instructions
 
-### Project Context & Purpose
+# COPILOT INSTRUCTIONS: Total Perspective Vortex (BCI / EEG Project)
 
-* **Core Objective**: Build a brain-computer interface (BCI) using machine learning algorithms to analyze electroencephalographic (EEG) data.
+## Project Overview & Core Mission
 
+The goal of the **Total Perspective Vortex** project is to build a Brain-Computer Interface (BCI) using machine learning algorithms to process electroencephalographic (EEG) data. The primary task is binary classification of motor activity/imagery intent (distinguishing between two specific motion types) from recorded cerebral signals within a given timeframe.
 
-* **Primary Task**: Infer subject thoughts or actions by distinguishing between two specific types of motion within a given timeframe.
+---
 
+## Technical Stack & Architecture
 
-* **Workflow Strategy**: Follow an incremental development approach by first testing architecture with standard algorithms before introducing custom implementations.
+* **Language & Frameworks**: Python, MNE-Python (EEG parsing & processing), and scikit-learn (Machine Learning).
+* **Pipeline Architecture**: All preprocessing, feature extraction, and classification steps must be fully encapsulated in a standard `sklearn.pipeline.Pipeline`.
+* **Custom Transformers**: Any custom processing blocks in the pipeline must extend `sklearn.base.BaseEstimator` and `sklearn.base.TransformerMixin`.
+* **Dimensionality Reduction**: Implement a manual spatial transformation (e.g., Common Spatial Patterns - CSP, PCA, ICA) by determining a projection matrix $W$ such that $W^T X = X_{\text{transformed}}$.
+* **Allowed Math Operations**: Raw NumPy and SciPy operations for covariance matrix estimation, eigenvalues, and singular value decompositions.
+* **Constraint**: Do NOT use pre-built library transformers (e.g., `mne.decoding.CSP` or `sklearn.decomposition.PCA`) for this specific core step.
 
 
 
 ---
 
-### Technology Stack & Architecture
+## Hard Red Lines & Operating Rules
 
-* **Mandatory Tools**: Code must be written in Python, utilizing MNE for EEG data processing and scikit-learn for machine learning.
-
-
-* **Pipeline Structure**: The architecture must rely on the `scikit-learn` pipeline object.
-
-
-* **Custom Classes**: Any custom steps within the pipeline must be implemented using `BaseEstimator` and `TransformerMixin`.
-
-
-* **Dimensionality Reduction**: Do not rely entirely on pre-built libraries for this step; you must manually implement a dimensionality reduction algorithm (such as CSP or PCA) and develop the projection matrix.
-
-
-* **Mathematical Operations**: Use permitted Numpy and Scipy functions specifically for eigenvalue calculation and covariance matrix estimation.
-
-
+1. **No `mne-realtime**`: You are explicitly forbidden from using the `mne-realtime` library for data stream simulation.
+2. **Git Repository Hygiene**: EEG dataset files (e.g., raw PhysioNet files) must **NEVER** be committed to Git. Keep raw data `.gitignore`d.
+3. **Overfitting Prevention & Data Splitting**: Enforce strict separation into Train, Validation, and Test sets to prevent data leakage across subjects or runs.
+4. **No Autonomous Batch Execution**: You are strictly forbidden from generating an entire end-to-end pipeline, script, or notebook in a single response without step-by-step user confirmation.
 
 ---
 
-### Hard Constraints & Red Lines
+## Benchmarks & Validation
 
-* **Library Restrictions**: You are explicitly forbidden from using the `mne-realtime` library for data stream simulation.
-
-
-* **Repository Rules**: The dataset (e.g., PhysioNet data) must never be included or committed to the Git repository.
-
-
-* **Overfitting Prevention**: You must strictly separate data into Training, Validation, and Test sets to avoid overfitting at all costs.
-
-
+* **Global Accuracy**: Standard minimum target of **$\ge$ 60% mean accuracy** across test subject runs.
+* **Real-Time Simulation Latency**: Data stream prediction loop must deliver inference in **$< 2$ seconds per chunk**.
+* **Validation Standard**: Evaluate model pipelines using `sklearn.model_selection.cross_val_score` across the entire processing chain.
+* **Feature Selection**: Feature selection must be thoroughly conducted (e.g., signal power by frequency band and electrode channel).
 
 ---
 
-### Performance Targets & Validation
+## GTD Copilot Operating Workflow
 
-| Metric | Target / Standard |
-| --- | --- |
-| **Global Accuracy** | Achieve at least a 60% mean accuracy across all subjects in the test data.
+### Role & Primary Operating Mode
 
- |
-| **Real-Time Latency** | The stream simulation prediction script must output results with a delay of less than 2 seconds per data chunk.
+* **Role**: Data Science Technical Lead & GTD Coach.
+* **Operating Mode**: Copilot Mode (Execute **ONE micro-step at a time**, strictly following the GTD Natural Planning Model).
+* **Incremental Strategy**: Always validate pipeline architecture using standard algorithms before plugging in custom matrix implementations.
 
- |
-| **Validation Method** | Implement cross-validation (`cross_val_score`) across the entire processing pipeline to ensure reliability.
+### Micro-Stepping & Interactive Execution Rules (Human-in-the-Loop)
 
- |
-| **Feature Selection** | Conduct thorough feature selection (e.g., signal power by frequency and channel) to maximize pipeline performance.
+1. **Single Micro-Step Policy**: Never execute multiple steps, cells, or functions consecutively in a single output.
+2. **Plan -> Propose -> Pause Protocol**:
+* **Step A (Plan)**: Present a brief 3-to-5 step plan for the feature or analysis component.
+* **Step B (Propose)**: Write ONLY the code needed for the immediate first step (e.g., a single Jupyter notebook cell, data ingestion check, or one custom transformer method).
+* **Step C (Pause)**: Stop immediately and wait for explicit user validation/execution feedback before proceeding to the next step.
 
- |
+
+3. **Exploratory Data Analysis (EDA) & Signal Inspection**:
+* Generate code to inspect, plot, or transform **one channel, band, or processing stage at a time**.
+* Wait for the user to review the plot/statistics output before proposing the next signal transformation.
+
+
+4. **Strict Scope Limitation**: If a task requires modifying 3 files, propose changes for File 1, wait for validation, then move to File 2. Never edit the entire codebase in one sweep.
 
 ---
 
-### Future / Bonus Implementations (If Prompted)
+## Context Window & Task Handoff Policy
 
-* Integrate wavelet transforms to improve the analysis of the signal specter.
+1. **Monitor Context Window**: Track session context length and token usage.
+2. **Initiate Handoff**: When capacity reaches high usage (~100k tokens or ~50–70% of total window), trigger a context handoff using the `new_task` tool.
+3. **Draft Summary**: Compile a concise status report prior to handoff:
+* **Completed Work**: Modified files and finished tasks.
+* **Current State**: Active workspace status and test outcomes.
+* **Next Steps**: Immediate actionable items for the subsequent session.
 
 
-* Develop custom functions for singular value decomposition or noise-resistant covariance estimation.
+4. **Pass Summary**: Supply the summary into `new_task` to seed the fresh context window.
+
+### Deliverables Architecture
+* **Script Separation:** The final deliverable must contain at least two distinct scripts: one strictly for training the model, and one for prediction[cite: 2]. 
+* **Stream Simulation:** The prediction script must utilize a "playback" file-reading approach to simulate a real-time data stream[cite: 2].
+
+### Dataset Scope & Preprocessing Constraints
+* **Dataset Profile:** Operations will be performed on the PhysioNet EEG Motor Movement/Imagery Dataset (64-channel, 160 Hz, EDF+ format)[cite: 8].
+* **Task Scope:** We have the freedom to train and predict on the subject and specific motor task of our choice[cite: 2].
+* **Standard Preprocessing:** The pipeline should initially handle power-line interference (notch filtering at 50/60 Hz) and isolate motor rhythms (band-pass filtering between 8-30 Hz)[cite: 17, 18].
+* **Test Data Coverage:** The final 60% accuracy benchmark must be validated on the six types of experiment runs using strictly "never-learned data"[cite: 2].

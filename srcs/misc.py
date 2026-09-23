@@ -10,7 +10,7 @@ mne.set_log_level('WARNING')
 # Subject 88: Sampled at 128 Hz instead of 160 Hz
 # Subjects 38, 89, 92, 100, 104, 106: Known annotation/event errors
 # EXCLUDED_SUBJECTS = [38, 88, 89, 92, 100, 104, 106]
-EXCLUDED_SUBJECTS = []
+EXCLUDED_SUBJECTS = [ 88, 89, 92, 100, 104, 106]
 
 # Parameters for our test subject
 SUBJECT_TO_TEST = 1
