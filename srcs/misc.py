@@ -136,6 +136,7 @@ def extract_and_map_events(raw, run_id):
 
     return events, event_dict, descriptions
 
+# ──────────────────────────────────────────────────────────────────────────────
 
 def load_and_parse_eeg(
     subject_ids: List[int],
