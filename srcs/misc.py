@@ -214,6 +214,7 @@ def load_and_parse_eeg(
 
                 # 7. Convert to NumPy for scikit-learn integration
                 X_run = epochs.get_data(copy=True)
+                #! Extract the corresponding labels for each trial [-1] give the last column 
                 y_run = epochs.events[:, -1]
 
                 # Store data if any trials were found
