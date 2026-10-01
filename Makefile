@@ -29,17 +29,18 @@ $(VENV)/bin/activate: requirements.txt
 	@echo "Setup complete. Use 'source $(VENV)/bin/activate' to enter the environment manually."
 
 # --- Project Execution ---
-split: setup
-	$(PYTHON) split.py
-
 train: setup
-	$(PYTHON) train.py --hidden 24 12  --epochs 1200 --lr 0.01
+	$(PYTHON) train.py --data-path doc/mne_data/MNE-eegbci-data/files/eegmmidb/1.0.0 --runs 4 8 12 --n-components 6 --reg 1e-6
 
 predict: setup
-	$(PYTHON) predict.py
+	$(PYTHON) predict.py --subject 1 --run 4 --model models/bci_pipeline.joblib
+
+test: setup
+	$(PYTHON) -m pytest tests/
+
 clean_model:
 	@echo "Cleaning up model files..."
-	rm -rf models learning_curves.png
+	rm -rf models/
 	@echo "Model files removed."
 
 # --- Cleanup ---
