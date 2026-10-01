@@ -27,6 +27,7 @@ def run_training_workflow(args):
     """
     print("=== Total Perspective Vortex: Training & Rigorous Validation ===")
     
+    #region Split data 
     # 1. Subject-Level Splitting (Leakage Prevention)
     print(f"\n[Step 1] Partitioning subjects from: {args.data_path}")
     train_subs, test_subs = get_subject_split(
@@ -41,27 +42,42 @@ def run_training_workflow(args):
     # Proof of Zero Leakage
     assert len(set(train_subs).intersection(set(test_subs))) == 0, "CRITICAL: Subject leakage detected!"
     
+    #region Load Data
     # 2. Load Training Cohort
     print(f"\n[Step 2] Loading training data (Runs: {args.runs})...")
     X_train, y_train, _ = load_cohort(train_subs, args.runs, args.data_path)
     print(f"  Training Tensor: {X_train.shape} | Classes: {np.unique(y_train)}")
+    #endregion
     
+    #region  sklearn pipeline 
     # 3. Pipeline Creation & Cross-Validation
     print(f"\n[Step 3] Running {args.n_splits}-fold Stratified Cross-Validation...")
     pipeline = create_bci_pipeline(n_components=args.n_components, reg=args.reg)
+    #endregion
     
+    #region Cross-Validation training
+    #! Perform cross-validation only with training data to estimate generalization performance before final model fitting.
     cv = StratifiedKFold(n_splits=args.n_splits, shuffle=True, random_state=args.seed)
+        # corss_val_score will evaluate the pipeline on each fold and return an array of accuracy scores.
+        # !this is done before the final model is fitted to the entire training set, to estimate how well the model generalizes.
     cv_scores = cross_val_score(pipeline, X_train, y_train, cv=cv, n_jobs=-1)
     
     mean_cv = np.mean(cv_scores)
     std_cv = np.std(cv_scores)
     print(f"  CV Accuracies: {cv_scores}")
     print(f"  Mean CV Accuracy: {mean_cv:.4f} (+/- {std_cv:.4f})")
-    
+    #endregion
+
+
+    #region  Training 
+    #! Fitting means training the pipeline on the entire training dataset (X_train, y_train) after cross-validation is complete. 
     # 4. Final Training & Holdout Evaluation
     print(f"\n[Step 4] Fitting final model and evaluating on unseen test subjects...")
     pipeline.fit(X_train, y_train)
+    #endregion
     
+    #region evalution
+    #! Evaluates the fitted pipeline on test data to see how well it performs on completely unseen subjects.
     X_test, y_test, _ = load_cohort(test_subs, args.runs, args.data_path)
     test_acc = pipeline.score(X_test, y_test)
     
@@ -87,7 +103,7 @@ def run_training_workflow(args):
         "n_components": args.n_components,
         "reg": args.reg
     }
-    
+    #! Save the trained pipeline along with metadata for future reference.
     saved_path = save_model(pipeline, args.output, metadata)
     file_size = os.path.getsize(saved_path) / 1024
     print(f"  Model saved to: {saved_path} ({file_size:.2f} KB)")
