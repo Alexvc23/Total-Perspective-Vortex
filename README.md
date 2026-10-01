@@ -85,3 +85,88 @@ flowchart TD
 
     E --> I["Evaluation & Benchmark Verification<br/>5-Fold Stratified CV (Target ≥ 60%)"]
     H --> I
+```
+
+---
+
+## Custom Dimensionality Reduction: Common Spatial Patterns (CSP) from Scratch (Phase 3)
+
+The `Phase 3: Custom Dimensionality Reduction (Common Spatial Patterns - CSP from Scratch).ipynb` notebook implements the Common Spatial Patterns (CSP) algorithm completely from scratch using explicit linear algebra (`numpy` and `scipy.linalg`), eliminating any dependency on pre-built spatial filtering libraries (such as `mne.decoding.CSP` or `pyriemann`).
+
+```mermaid
+flowchart TD
+    A["Raw EEG Epochs<br/>X ∈ ℝ^(N_trials × 64 × 641), y ∈ {0, 1}^N"] --> B["Trial-Wise Trace Normalization<br/>Σ_i = (X_i X_iᵀ) / Tr(X_i X_iᵀ)"]
+    B --> C["Class-Conditional Covariances<br/>Σ₀, Σ₁ ∈ ℝ^(64 × 64)"]
+    C --> D["Shrinkage Regularization (Tikhonov)<br/>Σ_reg = (1 - α)Σ + α I (α = 10⁻⁶)"]
+    D --> E["Generalized Eigenvalue Decomposition (GEP)<br/>Σ₀,reg v = λ (Σ₀,reg + Σ₁,reg) v"]
+    E --> F["Spatial Filter Selection (m = 3 per class)<br/>W ∈ ℝ^(64 × 6) (3 lowest + 3 highest λ)"]
+    F --> G["Spatial Projection<br/>Z = Wᵀ X ∈ ℝ^(N_trials × 6 × 641)"]
+    G --> H["Log-Variance Power Compression<br/>f = log(Var(Z, axis=2) + ε) ∈ ℝ^(N_trials × 6)"]
+    H --> I["Linear Discriminant Analysis (LDA)"]
+    I --> J["5-Fold Stratified CV Benchmark (≥ 60.23%)"]
+```
+
+### 1. Mathematical Foundations & Step-by-Step Formulation
+
+#### Step 1: Trial-Wise Normalized Covariance Estimation
+For each trial $X_i \in \mathbb{R}^{64 \times 641}$, the spatial covariance matrix is computed and normalized by its trace to eliminate signal amplitude variations across trials:
+$$\Sigma_i = \frac{X_i X_i^T}{\text{Tr}(X_i X_i^T)} \in \mathbb{R}^{64 \times 64}$$
+
+The class-conditional mean covariance matrices $\Sigma_0$ and $\Sigma_1$ are formed by averaging across trials of Class 0 (Left Fist) and Class 1 (Right Fist):
+$$\Sigma_c = \frac{1}{N_c} \sum_{i \in \text{Class } c} \Sigma_i \quad \text{for } c \in \{0, 1\}$$
+
+#### Step 2: Shrinkage Regularization (Tikhonov Regularization)
+Volume conduction across the 64 scalp electrodes causes severe spatial multicollinearity, resulting in near-zero determinants and non-positive-definite matrices. We apply shrinkage regularization to guarantee invertibility and numerical stability:
+$$\Sigma_{c, \text{reg}} = (1 - \alpha)\Sigma_c + \alpha I_{64} \quad (\alpha = 10^{-6})$$
+
+#### Step 3: Generalized Eigenvalue Problem (GEP)
+We simultaneously diagonalize both class covariances by solving the Generalized Eigenvalue Problem using `scipy.linalg.eigh`:
+$$\Sigma_{0, \text{reg}} v = \lambda (\Sigma_{0, \text{reg}} + \Sigma_{1, \text{reg}}) v$$
+
+* The eigenvalues $\lambda \in [0, 1]$ represent the ratio of variance for Class 0 relative to the total variance of both classes.
+* Eigenvalues near $1.0$ correspond to spatial filters that maximize Class 0 variance while minimizing Class 1 variance.
+* Eigenvalues near $0.0$ correspond to spatial filters that maximize Class 1 variance while minimizing Class 0 variance.
+
+#### Step 4: Spatial Projection Matrix $W$ Construction
+We select $m=3$ components from each end of the sorted eigenvalue spectrum ($2m = 6$ filters in total):
+$$W = [v_1, v_2, v_3, v_{62}, v_{63}, v_{64}] \in \mathbb{R}^{64 \times 6}$$
+
+#### Step 5: Feature Extraction via Log-Variance
+Continuous 3D signals are projected into the 6-dimensional CSP subspace and compressed along the temporal dimension using log-variance:
+$$Z_i = W^T X_i \in \mathbb{R}^{6 \times 641}$$
+$$f_i = \log\left(\text{Var}(Z_i, \text{axis}=1) + \epsilon\right) \in \mathbb{R}^6$$
+
+---
+
+### 2. Scikit-Learn Estimator Architecture (`CustomCSP`)
+
+The linear algebra operations are encapsulated in a reusable, production-ready transformer that adheres strictly to the Scikit-Learn API:
+
+* **Inheritance**: Extends `sklearn.base.BaseEstimator` and `sklearn.base.TransformerMixin`.
+* **Parameterization**:
+  * `n_components` (default: `6`): Total number of spatial filters to extract ($m = \text{n\_components} // 2$ per class).
+  * `reg` (default: `1e-6`): Shrinkage regularization strength $\alpha$.
+  * `log` (default: `True`): Flag to apply log-variance compression.
+* **Leakage-Free Execution**:
+  * `.fit(X, y)`: Computes $\Sigma_0, \Sigma_1$, applies shrinkage, solves the GEP, and stores the learned projection matrix in `self.filters_`.
+  * `.transform(X)`: Applies the learned projection matrix $W^T X$ and calculates log-variance features without reference to target labels $y$.
+
+---
+
+### 3. Pipeline Integration & Cohort Benchmark Validation
+
+The `CustomCSP` transformer is paired with `LinearDiscriminantAnalysis` (LDA) within a `sklearn.pipeline.Pipeline` and evaluated on the 102-subject benchmark cohort using 5-fold Stratified Cross-Validation:
+
+```python
+pipeline = Pipeline([
+    ('csp', CustomCSP(n_components=6, reg=1e-6, log=True)),
+    ('lda', LinearDiscriminantAnalysis())
+])
+
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+scores = cross_val_score(pipeline, X, y, cv=cv)
+```
+
+#### Benchmark Results:
+* **CustomCSP + LDA 5-Fold Mean Accuracy**: Exceeds the Phase 2 baseline threshold ($\ge 60.23\%$).
+* **Cross-Validation Stability**: Zero fold failures or numerical exceptions due to the shrinkage regularization.
