@@ -227,3 +227,10 @@ untitled:plan-physioNetExploration.prompt.md
 *.png
 doc/mne_data/
 models/bci_pipeline.joblib
+
+models/*.joblib
+models/*.pkl
+
+*.png
+*.svg
+doc/*.excalidraw.pngj
