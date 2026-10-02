@@ -110,6 +110,7 @@ typing_extensions==4.16.0   # Type hint annotations backports.
 urllib3==2.7.0              # Low-level HTTP client library.
 wcwidth==0.8.2              # Character cell width calculations for terminal displays.
 pandas
+pytest
 
 # ==============================================================================
 # Hard Constraints & Red Lines

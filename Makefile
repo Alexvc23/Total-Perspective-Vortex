@@ -12,6 +12,7 @@ help:
 	@echo "  split   : Run the data splitting script (split.py)"
 	@echo "  train   : Run the training script (train.py)"
 	@echo "  predict : Run the prediction script (predict.py)"
+	@echo "  test : Run the test script (test.py)"
 	@echo "  clean   : Remove virtual environment and cached files"
 	@echo "  clean_model : Remove model files"
 	@echo "  help    : Show this help message (default)"
@@ -36,7 +37,7 @@ predict: setup
 	$(PYTHON) predict.py --subject 1 --run 4 --model models/bci_pipeline.joblib
 
 test: setup
-	$(PYTHON) -m pytest tests/
+	$(PYTHON) -m pytest -v tests/
 
 clean_model:
 	@echo "Cleaning up model files..."

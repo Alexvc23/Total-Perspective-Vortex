@@ -50,6 +50,8 @@ def edf_playback_generator(
 
     events, _ = mne.events_from_annotations(raw, event_id=mapping, verbose=False)
     
+    # Calculate the number of samples per chunk based on the specified duration and sampling frequency
+        # which is 4 seconds * 160 Hz = 640 samples, plus 1 for no event overlap, resulting in 641 samples per chunk.
     samples_per_chunk = int(chunk_duration * sfreq) + 1
 
     # 3. Iterate through events (trials) and yield data
@@ -57,19 +59,29 @@ def edf_playback_generator(
         onset_sample = event[0]
         label = event[2]
         
+        # Calculate the stop sample for the chunk
         stop_sample = onset_sample + samples_per_chunk
         
         # Boundary check
+        # If the stop sample exceeds the total number of samples in the raw data, skip this trial.
         if stop_sample > raw.n_times:
             continue
             
-        # Extract chunk: (channels, samples)
+        #! Extract chunk: (channels, samples)
         # Note: Scikit-learn pipeline expects (trials, channels, samples)
         # but the generator yields one chunk (channels, samples) at a time.
         chunk_data = raw.get_data(start=onset_sample, stop=stop_sample)
         
+        # Calculate the timestamp in seconds for the chunk onset
         timestamp = onset_sample / sfreq
         
+        
+        # yield differs from return in that it allows the function to produce a series of values over time,
+            # rather than computing them all at once.
+            # e.g: here the data is streamed in chunks, simulating real-time EEG acquisition 
+        # Yield the chunk, label, and timestamp( in seconds)
+            # *  The yielded chunk is of shape (64, 641) for 64 channels and 641 samples 
+            # * even if the pipeline expects (1, 64, 641) for a single trial. The pipeline will handle the reshaping.
         yield chunk_data, label, timestamp
 
 def stream_prediction_logger(epoch_idx: int, prediction: int, truth: int, latency_ms: float, class_names: list = None):

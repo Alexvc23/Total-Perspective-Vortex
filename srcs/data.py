@@ -167,11 +167,15 @@ def load_cohort(
     if not X_list:
         raise ValueError("No trials were loaded for the specified cohort.")
 
+    # turn list into numpy array 
     X = np.concatenate(X_list, axis=0)
     y = np.concatenate(y_list, axis=0)
+    # create metadata DataFrame
     metadata = pd.DataFrame(metadata_records)
 
     return X, y, metadata
+
+# ──────────────────────────────────────────────────────────────────────────────
 
 def get_subject_split(
     data_path: str, 
@@ -206,8 +210,11 @@ def get_subject_split(
     np.random.seed(random_state)
     np.random.shuffle(all_subjects)
     
+    # calculate split index based on test_size: 80% of subject for training and 20% for testing
     split_idx = int(len(all_subjects) * (1 - test_size))
+    # set the training and testing subjects based on the split index
     train_subjects = sorted(all_subjects[:split_idx])
+    # set the testing subjects based on the split index
     test_subjects = sorted(all_subjects[split_idx:])
     
     return train_subjects, test_subjects
